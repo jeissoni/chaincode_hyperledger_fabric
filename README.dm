@@ -5,7 +5,11 @@ Implementación de un contrato inteligente en un canal
 
 Entrar a la carpeta "test-network" y lanzar el siguiente comando
 
+* para iniciar la red:
    cd test-network/ ;  ./network.sh up createChannel; cd ..
+
+*para detener la red:
+    cd test-network/ ;  ./network.sh down; cd ..
 
 resultado:
 
@@ -22,7 +26,7 @@ Use el siguiente comando para agregar esos archivos binarios a su ruta CLI:
     export PATH=${PWD}/bin:$PATH
 
 
-También debe configurar FABRIC_CFG_PATHpara que apunte al core.yaml
+También debe configurar FABRIC_CFG_PATH para que apunte al core.yaml
 archivo en el fabric-samplesrepositorio:
 
     export FABRIC_CFG_PATH=$PWD/config/
@@ -161,6 +165,36 @@ comando de invocación debe apuntar a una cantidad suficiente de pares para cump
 (Tenga en cuenta que la CLI no accede al par de Fabric Gateway, por lo que se debe especificar cada par de aprobación).
 
     peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"function":"InitLedger","Args":[]}'
+
+resultado:
+
+    ... INFO [chaincodeCmd] chaincodeInvokeOrQuery -> Chaincode invoke successful. result: status:200
+
+*   consulta para leer TODO el conjunto de datos que fueron creados por el código de cadena:
+
+    peer chaincode query -C mychannel -n basic -c '{"Args":["GetAllAssets"]}'
+
+resultado:
+    [
+    {"AppraisedValue":300,"Color":"blue","ID":"asset1","Owner":"Tomoko","Size":5},
+    {"AppraisedValue":400,"Color":"red","ID":"asset2","Owner":"Brad","Size":5},
+    {"AppraisedValue":500,"Color":"green","ID":"asset3","Owner":"Jin Soo","Size":10},
+    {"AppraisedValue":600,"Color":"yellow","ID":"asset4","Owner":"Max","Size":10},
+    {"AppraisedValue":700,"Color":"black","ID":"asset5","Owner":"Adriana","Size":15},
+    {"AppraisedValue":800,"Color":"white","ID":"asset6","Owner":"Michel","Size":15}
+    ]
+
+*   consulta para leer un activo en especifico:
+
+    peer chaincode query -C mychannel -n basic -c '{"Args":["ReadAsset", "asset1"]}
+
+*   coonsulta para crear un activo
+
+    peer chaincode invoke -C mychannel -n basic -c '{"Args":["CreateAsset","asset7","black","5","Tom","900"]}'
+
+
+Resultado:
+    {"AppraisedValue":300,"Color":"blue","ID":"asset1","Owner":"Tomoko","Size":5}
 
 
 Para mas detalle consultar:
