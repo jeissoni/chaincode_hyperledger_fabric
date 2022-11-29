@@ -1,9 +1,9 @@
 package main
 
 import (
-	"atcc/chainCode"
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 	"log"
+	"test_chaincode/chainCode"
 )
 
 func main() {

@@ -18,7 +18,7 @@ type Asset struct {
 	Size           int    `json:"Size"`
 }
 
-func (s *SmartContract) InitLedger(ctx.TransactionContextInterface) error {
+func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	assets := []Asset{
 		{ID: "asset1", Color: "blue", Size: 5, Owner: "Tomoko", AppraisedValue: 300},
 		{ID: "asset2", Color: "red", Size: 5, Owner: "Brad", AppraisedValue: 400},
@@ -42,7 +42,7 @@ func (s *SmartContract) InitLedger(ctx.TransactionContextInterface) error {
 }
 
 func (s *SmartContract) CreateAsset(
-	ctx.TransactionContextInterface,
+	ctx contractapi.TransactionContextInterface,
 	id string,
 	color string,
 	size int,
@@ -71,7 +71,7 @@ func (s *SmartContract) CreateAsset(
 	return ctx.GetStub().PutState(id, assetJSON)
 }
 
-func (s *SmartContract) ReadAsset(ctx.TransactionContextInterface, id string) (*Asset, error) {
+func (s *SmartContract) ReadAsset(ctx contractapi.TransactionContextInterface, id string) (*Asset, error) {
 	assetJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read from world state: %v", err)
@@ -90,7 +90,7 @@ func (s *SmartContract) ReadAsset(ctx.TransactionContextInterface, id string) (*
 }
 
 func (s *SmartContract) UpdateAsset(
-	ctx.TransactionContextInterface,
+	ctx contractapi.TransactionContextInterface,
 	id string,
 	color string,
 	size int,
@@ -121,7 +121,7 @@ func (s *SmartContract) UpdateAsset(
 	return ctx.GetStub().PutState(id, assetJSON)
 }
 
-func (s *SmartContract) DeleteAsset(ctx.TransactionContextInterface, id string) error {
+func (s *SmartContract) DeleteAsset(ctx contractapi.TransactionContextInterface, id string) error {
 	exists, err := s.AssetExists(ctx, id)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (s *SmartContract) DeleteAsset(ctx.TransactionContextInterface, id string) 
 	return ctx.GetStub().DelState(id)
 }
 
-func (s *SmartContract) TransferAsset(ctx.TransactionContextInterface, id string, newOwner string) error {
+func (s *SmartContract) TransferAsset(ctx contractapi.TransactionContextInterface, id string, newOwner string) error {
 	asset, err := s.ReadAsset(ctx, id)
 	if err != nil {
 		return err
@@ -148,7 +148,7 @@ func (s *SmartContract) TransferAsset(ctx.TransactionContextInterface, id string
 	return ctx.GetStub().PutState(id, assetJSON)
 }
 
-func (s *SmartContract) GetAllAssets(ctx.TransactionContextInterface) ([]*Asset, error) {
+func (s *SmartContract) GetAllAssets(ctx contractapi.TransactionContextInterface) ([]*Asset, error) {
 	// range query with empty string for startKey and endKey does an
 	// open-ended query of all assets in the chaincode namespace.
 	resultsIterator, err := ctx.GetStub().GetStateByRange("", "")
@@ -175,7 +175,7 @@ func (s *SmartContract) GetAllAssets(ctx.TransactionContextInterface) ([]*Asset,
 	return assets, nil
 }
 
-func (s *SmartContract) AssetExists(ctx.TransactionContextInterface, id string) (bool, error) {
+func (s *SmartContract) AssetExists(ctx contractapi.TransactionContextInterface, id string) (bool, error) {
 	assetJSON, err := ctx.GetStub().GetState(id)
 	if err != nil {
 		return false, fmt.Errorf("error to read from world satet: %v", err)
