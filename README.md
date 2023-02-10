@@ -1,5 +1,14 @@
 ## Implementación de un contrato inteligente en un canal
 
+## Red de ejemplo
+
+* Incluye dos organizaciones pares y una organización ordenante.
+
+* Para simplificar, se configura un servicio de pedido de Raft de un solo nodo.
+
+* Para reducir la complejidad, no se implementa una autoridad de certificación (CA) TLS. Todos los certificados son emitidos por las CA raíz.
+
+* La red de muestra implementa una red Fabric con Docker Compose. Debido a que los nodos están aislados dentro de una red de Docker Compose, la red de prueba no está configurada para conectarse a otros nodos de Fabric en ejecución.
 
 ### 1. Iniciar la red
 
@@ -32,18 +41,29 @@ Use el siguiente comando para agregar esos archivos binarios a su ruta CLI:
     export PATH=${PWD}/bin:$PATH
 ```
 
+Para instalar las dependencias de contratos inteligentes, ejecute el siguiente comando desde
+el directorio 'assets-chaincode'
+
+```bash
+GO111MODULE=on go mod vendor
+```
+
+Si el comando tiene éxito, los paquetes go se instalarán dentro de una carpeta llamada 'vendor'
+
+
 También debe configurar FABRIC_CFG_PATH para que apunte al core.yaml
-archivo en el fabric-samplesrepositorio:
+archivo en el la carpeta 'config':
 
 ```bash
     export FABRIC_CFG_PATH=$PWD/config/
 
     peer version
 
-    peer lifecycle chaincode package basic.tar.gz --path assets-chaincode/chainCode/ --lang golang --label basic_1.0
+    peer lifecycle chaincode package basic.tar.gz --path assets-chaincode/ --lang golang --label basic_1.0
 ```
 
-### 3. Instalar el paquete en la cadena
+### 3. Instalar el paquete chaincode
+
 se debe instalar en los todos los pares que respladaran la transaccion
 
 3.1 instalar en el peer 1
@@ -69,6 +89,7 @@ instalar el código de cadena en el par:
 Resultado:
 
 ```bash
+    submitInstallProposal -> Installed remotely: response:<status:200 payload:"\nJhash\022\tbasic_1.0" >
     submitInstallProposal -> Chaincode code package identifier: basic_1.0: hash
 ```
 
@@ -87,16 +108,19 @@ entorno para operar como administrador de Org2 y apunte al par de Org2, peer0.or
 Resultado:
 
 ```bash
-     submitInstallProposal -> Chaincode code package identifier: basic_1.0:hash
+     submitInstallProposal -> Installed remotely: response:<status:200 payload:"\nJbasic_1.0:hash\022\tbasic_1.0" >
+    submitInstallProposal -> Chaincode code package identifier: basic_1.0:hash
 ```
 
-### 4. Aprobar una definición de código de cadena
+### 4. Aprobar una definición de chaincode
 
 
 Si una organización ha instalado el código de cadena en su par, debe incluir el ID del paquete
 en la definición de código de cadena aprobada por su organización. El ID del paquete se usa para
 asociar el código de cadena instalado en un par con una definición de código de cadena aprobada
 y permite que una organización use el código de cadena para respaldar transacciones.
+
+como saber el id (hash) del chaincode instalado ?
 
 ```bash
     peer lifecycle chaincode queryinstalled
@@ -145,6 +169,12 @@ Ahora puede aprobar la definición de código de cadena como Org1.
     peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --channelID mychannel --name basic --version 1.0 --package-id $CC_PACKAGE_ID --sequence 1 --tls --cafile "${PWD}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem"
 ```
 
+Resultado:
+
+```bash
+    ... [chaincodeCmd] ClientWait -> txid [hahs] committed with status (VALID) at localhost:7051
+```
+
 ### 5. Enviar la definición de código de cadena al canal
 
 Después de que un número suficiente de organizaciones haya aprobado una definición de código de cadena,
@@ -171,7 +201,7 @@ Resultado:
 Dado que ambas organizaciones que son miembros del canal han aprobado los mismos parámetros, la definición
 del código de cadena está lista para confirmarse en el canal.
 ```bash
-    peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --channelID mychannel --name basic --version 1.0 --sequence 1 --tls --cafile "${PWD}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
+     peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --channelID mychannel --name basic --version 1.0 --sequence 1 --tls --cafile "${PWD}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
 ```
 Resultado:
 ```bash
@@ -226,12 +256,12 @@ resultado:
 
 *   coonsulta para crear un activo
 ```bash
-    peer chaincode invoke -C mychannel -n basic -c '{"Args":["CreateAsset","asset7","black","5","Tom","900"]}'
+    peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem" -C mychannel -n basic --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt" -c '{"Args":["CreateAsset","asset7","black","5","Tom","900"]}'
 ```
 
 Resultado:
 ```bash
-    {"AppraisedValue":300,"Color":"blue","ID":"asset1","Owner":"Tomoko","Size":5}
+    ... [chaincodeCmd] chaincodeInvokeOrQuery -> Chaincode invoke successful. result: status:200
 ```
 
 Para mas detalle consultar:
