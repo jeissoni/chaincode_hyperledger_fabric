@@ -265,4 +265,4 @@ Resultado:
 ```
 
 Para mas detalle consultar:
-https://hyperldger-fabric.readthedocs.io/en/release-2.5/deploy_chaincode.html
+https://hyperledger-fabric.readthedocs.io/en/release-2.5/deploy_chaincode.html
